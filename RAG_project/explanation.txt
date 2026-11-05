@@ -1,0 +1,269 @@
+| Library             | Purpose                 |
+| ------------------- | ----------------------- |
+| Flask               | Create web application  |
+| PdfReader           | Read PDF files          |
+| SentenceTransformer | Convert text to vectors |
+| FAISS               | Vector database         |
+| NumPy               | Handle arrays           |
+| os                  | File handling           |
+
+
+
+Create Upload Folder
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+Creates:
+
+project/
+│
+├── uploads/
+
+Uploaded PDFs are stored here.
+
+
+
+
+Load Transformer Model
+model = SentenceTransformer('all-MiniLM-L6-v2')
+
+Loads a pre-trained Transformer.
+
+Job
+
+Convert text:
+
+CNN is used for image processing
+
+into
+
+[0.23, -0.56, 0.88, ...]
+
+These numbers are called:
+
+Embeddings
+
+
+
+
+
+5. Global Variables
+documents = []
+index = None
+documents
+
+Stores PDF chunks.
+
+Example:
+
+[
+ "Machine Learning is a subset of AI",
+ "Regression predicts continuous values",
+ "CNN is used for image processing"
+]
+index
+
+Stores vectors inside FAISS.
+
+6. Flask Route
+@app.route("/", methods=["GET", "POST"])
+
+When user opens:
+
+http://127.0.0.1:5000
+
+this function executes.
+
+7. Upload PDF
+if "pdf" in request.files:
+
+Checks if user uploaded a PDF.
+
+8. Save PDF
+path = os.path.join(
+    UPLOAD_FOLDER,
+    pdf.filename
+)
+
+pdf.save(path)
+
+Example:
+
+uploads/ml_notes.pdf
+9. Read PDF
+reader = PdfReader(path)
+
+Loads PDF.
+
+10. Extract Text
+text = ""
+
+for page in reader.pages:
+
+    page_text = page.extract_text()
+
+    if page_text:
+        text += page_text + "\n"
+
+Example result:
+
+Machine Learning is a subset of AI
+
+Regression predicts continuous values
+
+CNN is used for image processing
+11. Chunking
+documents = []
+
+for line in text.split("\n"):
+
+    line = line.strip()
+
+    if len(line) > 0:
+        documents.append(line)
+Before
+Whole PDF = One Chunk
+After
+[
+ "Machine Learning is a subset of AI",
+ "Regression predicts continuous values",
+ "CNN is used for image processing"
+]
+
+This is called:
+
+Chunking
+12. Create Embeddings
+vectors = model.encode(documents)
+
+Converts every chunk into numbers.
+
+Example:
+
+[
+ [0.12,0.55,0.88,...],
+ [0.11,0.52,0.91,...],
+ [0.20,0.61,0.77,...]
+]
+13. Convert to NumPy
+vectors = np.array(
+    vectors,
+    dtype=np.float32
+)
+
+FAISS requires:
+
+float32
+
+format.
+
+14. Create FAISS Database
+dimension = vectors.shape[1]
+
+Gets vector size.
+
+Example:
+
+384
+
+because MiniLM creates 384-dimensional vectors.
+
+15. Create Index
+index = faiss.IndexFlatL2(
+    dimension
+)
+
+Creates vector database.
+
+L2 means
+
+Euclidean Distance
+
+Nearest vector = Most similar meaning.
+
+16. Store Vectors
+index.add(vectors)
+
+Stores all embeddings inside FAISS.
+
+Think:
+
+Chunks
+↓
+Embeddings
+↓
+FAISS Database
+17. PDF Uploaded
+answer = (
+    f"PDF Uploaded Successfully. "
+    f"{len(documents)} chunks created."
+)
+
+Example:
+
+PDF Uploaded Successfully.
+6 chunks created.
+18. User Question
+question = request.form["question"]
+
+Example:
+
+What is CNN?
+19. Convert Question to Embedding
+query_vector = model.encode(
+    [question]
+)
+
+Example:
+
+What is CNN?
+
+↓
+
+[0.22,0.41,0.92,...]
+20. Search FAISS
+distances, results = index.search(
+    query_vector,
+    k=1
+)
+
+FAISS compares:
+
+Question Vector
+
+with
+
+All Chunk Vectors
+
+and finds nearest one.
+
+Example
+
+Question:
+
+What is CNN?
+
+FAISS compares:
+
+Chunk	Similarity
+Regression	Low
+Flask	Low
+CNN	High
+
+Returns:
+
+results = [[4]]
+
+Meaning:
+
+documents[4]
+21. Retrieve Answer
+best_match = results[0][0]
+
+answer = documents[
+    best_match
+]
+
+Output:
+
+CNN is used for image processing.

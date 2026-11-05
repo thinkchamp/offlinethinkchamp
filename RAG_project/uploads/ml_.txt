@@ -1,0 +1,11 @@
+Machine Learning is a subset of Artificial Intelligence.
+
+Regression predicts continuous values.
+
+Classification predicts categories.
+
+CNN is used for image processing.
+
+RNN is used for sequence data.
+
+BERT is a Transformer model used in NLP.

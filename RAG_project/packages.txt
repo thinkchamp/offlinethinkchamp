@@ -1,0 +1,1 @@
+pip install flask sentence-transformers faiss-cpu pypdf numpy
